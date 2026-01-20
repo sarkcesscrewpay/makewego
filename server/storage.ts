@@ -1,38 +1,129 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import {
+  buses, busRoutes, schedules, bookings, profiles,
+  type Bus, type InsertBus,
+  type BusRoute, type InsertRoute,
+  type Schedule, type InsertSchedule,
+  type Booking, type InsertBooking,
+  type Profile, type InsertProfile
+} from "@shared/schema";
+import { eq, and, desc, gte } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Buses
+  getBuses(): Promise<Bus[]>;
+  createBus(bus: InsertBus): Promise<Bus>;
+  updateBus(id: number, bus: Partial<InsertBus>): Promise<Bus>;
+
+  // Routes
+  getRoutes(): Promise<BusRoute[]>;
+  createRoute(route: InsertRoute): Promise<BusRoute>;
+
+  // Schedules
+  getSchedules(filters?: { from?: string, to?: string, date?: string }): Promise<(Schedule & { route: BusRoute, bus: Bus })[]>;
+  createSchedule(schedule: InsertSchedule): Promise<Schedule>;
+  getSchedule(id: number): Promise<Schedule | undefined>;
+
+  // Bookings
+  getBookings(userId: string): Promise<(Booking & { schedule: Schedule, route: BusRoute })[]>;
+  createBooking(booking: InsertBooking): Promise<Booking>;
+  cancelBooking(id: number, userId: string): Promise<Booking | undefined>;
+
+  // Profile
+  getProfile(userId: string): Promise<Profile | undefined>;
+  createProfile(userId: string, profile: any): Promise<Profile>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getBuses(): Promise<Bus[]> {
+    return await db.select().from(buses);
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async createBus(bus: InsertBus): Promise<Bus> {
+    const [newBus] = await db.insert(buses).values(bus).returning();
+    return newBus;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async updateBus(id: number, bus: Partial<InsertBus>): Promise<Bus> {
+    const [updated] = await db.update(buses).set(bus).where(eq(buses.id, id)).returning();
+    return updated;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async getRoutes(): Promise<BusRoute[]> {
+    return await db.select().from(busRoutes);
+  }
+
+  async createRoute(route: InsertRoute): Promise<BusRoute> {
+    const [newRoute] = await db.insert(busRoutes).values(route).returning();
+    return newRoute;
+  }
+
+  async getSchedules(filters?: { from?: string, to?: string, date?: string }): Promise<(Schedule & { route: BusRoute, bus: Bus })[]> {
+    let query = db.select({
+      schedule: schedules,
+      route: busRoutes,
+      bus: buses
+    })
+    .from(schedules)
+    .innerJoin(busRoutes, eq(schedules.routeId, busRoutes.id))
+    .innerJoin(buses, eq(schedules.busId, buses.id))
+    .where(gte(schedules.departureTime, new Date())); // Only future rides
+
+    // Simple filtering (could be improved with fuzzy search)
+    // if (filters?.from) ...
+
+    const results = await query;
+    
+    // Map to flat structure or keep nested depending on needs. Keeping nested for now but returning as intersection for TS convenience in route handler
+    return results.map(r => ({ ...r.schedule, route: r.route, bus: r.bus }));
+  }
+
+  async createSchedule(schedule: InsertSchedule): Promise<Schedule> {
+    const [newSchedule] = await db.insert(schedules).values(schedule).returning();
+    return newSchedule;
+  }
+
+  async getSchedule(id: number): Promise<Schedule | undefined> {
+    const [schedule] = await db.select().from(schedules).where(eq(schedules.id, id));
+    return schedule;
+  }
+
+  async getBookings(userId: string): Promise<(Booking & { schedule: Schedule, route: BusRoute })[]> {
+    const results = await db.select({
+      booking: bookings,
+      schedule: schedules,
+      route: busRoutes
+    })
+    .from(bookings)
+    .innerJoin(schedules, eq(bookings.scheduleId, schedules.id))
+    .innerJoin(busRoutes, eq(schedules.routeId, busRoutes.id))
+    .where(eq(bookings.userId, userId));
+
+    return results.map(r => ({ ...r.booking, schedule: r.schedule, route: r.route }));
+  }
+
+  async createBooking(booking: InsertBooking): Promise<Booking> {
+    const [newBooking] = await db.insert(bookings).values(booking).returning();
+    return newBooking;
+  }
+
+  async cancelBooking(id: number, userId: string): Promise<Booking | undefined> {
+    const [updated] = await db.update(bookings)
+      .set({ status: 'cancelled' })
+      .where(and(eq(bookings.id, id), eq(bookings.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async getProfile(userId: string): Promise<Profile | undefined> {
+    const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId));
+    return profile;
+  }
+
+  async createProfile(userId: string, profileData: any): Promise<Profile> {
+    const [profile] = await db.insert(profiles).values({ userId, ...profileData }).returning();
+    return profile;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
