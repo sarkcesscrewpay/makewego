@@ -27,8 +27,8 @@ export default function Dashboard() {
         {/* Search Header */}
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
           <div className="p-8 bg-primary">
-            <h1 className="text-3xl font-display font-bold text-white mb-2">Find your next trip</h1>
-            <p className="text-blue-100">Compare prices, schedules, and book in seconds.</p>
+            <h1 className="text-3xl font-display font-bold text-white mb-2">We Go: Find your next trip</h1>
+            <p className="text-blue-100">Compare prices, schedules, and book in seconds across Ghana.</p>
           </div>
           
           <div className="p-6">
@@ -36,7 +36,7 @@ export default function Dashboard() {
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input 
-                  placeholder="From (City)" 
+                  placeholder="From (Accra, Circle, etc.)" 
                   className="pl-10 h-12 text-lg" 
                   value={search.from}
                   onChange={(e) => setSearch({ ...search, from: e.target.value })}
@@ -45,7 +45,7 @@ export default function Dashboard() {
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input 
-                  placeholder="To (City)" 
+                  placeholder="To (Kumasi, Kejetia, etc.)" 
                   className="pl-10 h-12 text-lg" 
                   value={search.to}
                   onChange={(e) => setSearch({ ...search, to: e.target.value })}
@@ -95,17 +95,17 @@ export default function Dashboard() {
 
           <div className="hidden lg:block">
             <div className="bg-white p-6 rounded-2xl shadow-sm sticky top-24">
-              <h3 className="font-semibold text-gray-800 mb-4">Popular Destinations</h3>
+              <h3 className="font-semibold text-gray-800 mb-4">Popular Routes</h3>
               <div className="space-y-4">
                 {/* Static map preview of a popular route */}
                 <RouteMap 
-                  startLocation="New York" 
-                  endLocation="Washington DC" 
-                  stops={["Philadelphia"]} 
+                  startLocation="Accra" 
+                  endLocation="Kumasi" 
+                  stops={["Linda Dor"]} 
                   className="h-64 w-full rounded-xl"
                 />
                 <p className="text-sm text-gray-500 mt-2">
-                  Most travelers are heading to Washington DC today.
+                  Most travelers are heading to Kumasi today.
                 </p>
               </div>
             </div>
@@ -161,7 +161,7 @@ function ScheduleCard({ schedule }: { schedule: any }) {
             </h3>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-primary">${schedule.price}</div>
+            <div className="text-2xl font-bold text-primary">GHS {schedule.price}</div>
             <div className="text-sm text-gray-500">per person</div>
           </div>
         </div>
@@ -209,7 +209,7 @@ function ScheduleCard({ schedule }: { schedule: any }) {
                   </div>
                   <div className="border-t border-gray-200 my-2 pt-2 flex justify-between">
                     <span className="font-bold text-gray-900">Total Price</span>
-                    <span className="font-bold text-primary text-xl">${schedule.price}</span>
+                    <span className="font-bold text-primary text-xl">GHS {schedule.price}</span>
                   </div>
                 </div>
                 

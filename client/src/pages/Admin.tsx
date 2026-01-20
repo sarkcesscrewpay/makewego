@@ -261,7 +261,7 @@ function SchedulesPanel() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Price ($)</Label>
+                <Label>Price (GHS)</Label>
                 <Input name="price" type="number" step="0.01" required />
               </div>
               <Button type="submit" className="w-full btn-primary" disabled={createSchedule.isPending}>
@@ -278,7 +278,7 @@ function SchedulesPanel() {
             <CardContent className="pt-6">
               <div className="flex justify-between mb-2">
                 <span className="font-bold">{schedule.route.name}</span>
-                <span className="text-primary font-bold">${schedule.price}</span>
+                <span className="text-primary font-bold">GHS {schedule.price}</span>
               </div>
               <div className="text-sm text-gray-500 mb-2">
                 Bus: {schedule.bus.plateNumber}

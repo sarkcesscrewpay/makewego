@@ -22,20 +22,21 @@ interface RouteMapProps {
   className?: string;
 }
 
-// In a real app, we would use a geocoding service to get coords.
-// For this demo, we'll simulate coordinates based on string hashes or defaults.
+// Ghanaian Locations Coords
 const MOCK_COORDS: Record<string, [number, number]> = {
-  "New York": [40.7128, -74.0060],
-  "Boston": [42.3601, -71.0589],
-  "Philadelphia": [39.9526, -75.1652],
-  "Washington DC": [38.9072, -77.0369],
-  "Chicago": [41.8781, -87.6298],
-  "Detroit": [42.3314, -83.0458],
+  "Accra": [5.6037, -0.1870],
+  "Kumasi": [6.6666, -1.6163],
+  "Takoradi": [4.8917, -1.7525],
+  "Tamale": [9.4007, -0.8393],
+  "Circle Station": [5.5593, -0.2085],
+  "Madina Station": [5.6685, -0.1654],
+  "Kejetia Station": [6.6941, -1.6217],
+  "Linda Dor": [6.2647, -0.5284],
 };
 
 function getCoords(city: string): [number, number] {
   // Return known city coords or a default slightly offset random location
-  return MOCK_COORDS[city] || [40.7128 + Math.random(), -74.0060 + Math.random()];
+  return MOCK_COORDS[city] || [5.6037 + (Math.random() - 0.5) * 0.1, -0.1870 + (Math.random() - 0.5) * 0.1];
 }
 
 export function RouteMap({ startLocation, endLocation, stops, className = "h-64 w-full" }: RouteMapProps) {

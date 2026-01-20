@@ -88,25 +88,34 @@ export async function registerRoutes(
   if (process.env.NODE_ENV !== "production") {
     const routes = await storage.getRoutes();
     if (routes.length === 0) {
-      console.log("Seeding data...");
-      const bus1 = await storage.createBus({ plateNumber: "BUS-001", driverName: "John Doe", capacity: 40, status: "active" });
-      const bus2 = await storage.createBus({ plateNumber: "BUS-002", driverName: "Jane Smith", capacity: 50, status: "active" });
+      console.log("Seeding Ghanaian data...");
+      const bus1 = await storage.createBus({ plateNumber: "GW-1234-24", driverName: "Kofi Mensah", capacity: 40, status: "active" });
+      const bus2 = await storage.createBus({ plateNumber: "AS-5678-23", driverName: "Kwame Asante", capacity: 50, status: "active" });
 
       const route1 = await storage.createRoute({ 
-        name: "Downtown to Airport", 
-        startLocation: "Downtown Terminal", 
-        endLocation: "Airport", 
-        stops: ["Stop A", "Stop B", "Stop C"], 
-        distance: "15.5", 
-        estimatedDuration: 45 
+        name: "Circle to Madina", 
+        startLocation: "Circle Station", 
+        endLocation: "Madina Station", 
+        stops: ["37 Military Hospital", "Legon", "UPSA"], 
+        distance: "12.5", 
+        estimatedDuration: 40 
+      });
+
+      const route2 = await storage.createRoute({ 
+        name: "Accra to Kumasi", 
+        startLocation: "VIP Station (Accra)", 
+        endLocation: "Kejetia Station", 
+        stops: ["Linda Dor", "Konongo"], 
+        distance: "250.0", 
+        estimatedDuration: 240 
       });
 
       await storage.createSchedule({ 
         routeId: route1.id, 
         busId: bus1.id, 
-        departureTime: new Date(Date.now() + 3600000), // 1 hour from now
-        arrivalTime: new Date(Date.now() + 3600000 + 2700000), 
-        price: "10.00" 
+        departureTime: new Date(Date.now() + 3600000), 
+        arrivalTime: new Date(Date.now() + 3600000 + 2400000), 
+        price: "15.00" 
       });
       console.log("Seeding complete.");
     }
