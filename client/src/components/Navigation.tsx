@@ -27,7 +27,7 @@ export function Navigation() {
             <Link href="/" className="flex items-center space-x-2">
               <Bus className="h-8 w-8 text-primary" />
               <span className="text-xl font-bold font-display text-gray-900 tracking-tight">
-                BusGo
+                Make We Go
               </span>
             </Link>
             

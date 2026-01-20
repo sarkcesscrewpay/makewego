@@ -27,7 +27,7 @@ export default function Dashboard() {
         {/* Search Header */}
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
           <div className="p-8 bg-primary">
-            <h1 className="text-3xl font-display font-bold text-white mb-2">We Go: Find your next trip</h1>
+            <h1 className="text-3xl font-display font-bold text-white mb-2">Make We Go: Find your next trip</h1>
             <p className="text-blue-100">Compare prices, schedules, and book in seconds across Ghana.</p>
           </div>
           
