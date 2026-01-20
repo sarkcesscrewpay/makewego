@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, type InsertSchedule } from "@shared/routes";
+import { api } from "@shared/routes";
+import type { InsertSchedule } from "@shared/schema";
 
 interface SearchParams {
   from?: string;

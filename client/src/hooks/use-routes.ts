@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, type InsertRoute } from "@shared/routes";
+import { api } from "@shared/routes";
+import type { BusRoute, InsertRoute } from "@shared/schema";
 
 export function useRoutes() {
   return useQuery({

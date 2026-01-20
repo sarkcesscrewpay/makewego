@@ -34,6 +34,8 @@ export interface IStorage {
   createProfile(userId: string, profile: any): Promise<Profile>;
 }
 
+export type InsertProfile = typeof profiles.$inferInsert;
+
 export class DatabaseStorage implements IStorage {
   async getBuses(): Promise<Bus[]> {
     return await db.select().from(buses);
@@ -54,12 +56,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRoute(route: InsertRoute): Promise<BusRoute> {
-    const [newRoute] = await db.insert(busRoutes).values(route).returning();
+    const [newRoute] = await db.insert(busRoutes).values({
+      ...route,
+      distance: route.distance.toString()
+    }).returning();
     return newRoute;
   }
 
   async getSchedules(filters?: { from?: string, to?: string, date?: string }): Promise<(Schedule & { route: BusRoute, bus: Bus })[]> {
-    let query = db.select({
+    const whereConditions = [gte(schedules.departureTime, new Date())];
+
+    if (filters?.from) {
+      whereConditions.push(eq(busRoutes.startLocation, filters.from));
+    }
+    if (filters?.to) {
+      whereConditions.push(eq(busRoutes.endLocation, filters.to));
+    }
+
+    const results = await db.select({
       schedule: schedules,
       route: busRoutes,
       bus: buses
@@ -67,19 +81,16 @@ export class DatabaseStorage implements IStorage {
     .from(schedules)
     .innerJoin(busRoutes, eq(schedules.routeId, busRoutes.id))
     .innerJoin(buses, eq(schedules.busId, buses.id))
-    .where(gte(schedules.departureTime, new Date())); // Only future rides
+    .where(and(...whereConditions));
 
-    // Simple filtering (could be improved with fuzzy search)
-    // if (filters?.from) ...
-
-    const results = await query;
-    
-    // Map to flat structure or keep nested depending on needs. Keeping nested for now but returning as intersection for TS convenience in route handler
     return results.map(r => ({ ...r.schedule, route: r.route, bus: r.bus }));
   }
 
   async createSchedule(schedule: InsertSchedule): Promise<Schedule> {
-    const [newSchedule] = await db.insert(schedules).values(schedule).returning();
+    const [newSchedule] = await db.insert(schedules).values({
+      ...schedule,
+      price: schedule.price.toString()
+    }).returning();
     return newSchedule;
   }
 

@@ -40,7 +40,12 @@ export async function registerRoutes(
 
   // === SCHEDULES ===
   app.get(api.schedules.list.path, async (req, res) => {
-    const schedules = await storage.getSchedules(req.query as any);
+    const filters = {
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined,
+      date: req.query.date as string | undefined
+    };
+    const schedules = await storage.getSchedules(filters);
     res.json(schedules);
   });
 

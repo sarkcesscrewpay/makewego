@@ -73,3 +73,4 @@ export type InsertBus = z.infer<typeof insertBusSchema>;
 export type InsertRoute = z.infer<typeof insertRouteSchema>;
 export type InsertSchedule = z.infer<typeof insertScheduleSchema>;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
+export type InsertProfile = typeof profiles.$inferInsert;
