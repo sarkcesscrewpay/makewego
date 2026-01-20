@@ -61,6 +61,13 @@ Users have profiles with roles: `passenger` (default), `driver`, or `admin`. Adm
 - `ISSUER_URL`: Replit OIDC issuer (defaults to https://replit.com/oidc)
 - `REPL_ID`: Replit environment identifier
 
+### Local Development (VS Code / Windows)
+To run this project locally on Windows:
+1. Ensure Node.js is installed.
+2. Install dependencies: `npm install`
+3. The project uses `cross-env` to handle environment variables across different operating systems.
+4. Run in development mode: `npm run dev`
+
 ### Build & Development
 - `npm run dev`: Development server with Vite HMR
 - `npm run build`: Production build (Vite for frontend, esbuild for backend)
