@@ -65,7 +65,8 @@ Users have profiles with roles: `passenger` (default), `driver`, or `admin`. Adm
 To run this project locally on Windows:
 1. Ensure Node.js is installed.
 2. Install dependencies: `npm install`
-3. The project uses `cross-env` to handle environment variables across different operating systems.
+3. Configure environment variables: Create a `.env` file based on the provided template and fill in your details (DATABASE_URL, etc.).
+4. The project uses `cross-env` to handle environment variables across different operating systems.
 4. Run in development mode: `npm run dev`
 
 ### Build & Development
