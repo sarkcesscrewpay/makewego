@@ -213,11 +213,10 @@ function SchedulesPanel() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     createSchedule.mutate({
-      routeId: Number(formData.get("routeId")),
-      busId: Number(formData.get("busId")),
-      departureTime: new Date(formData.get("departureTime") as string),
-      arrivalTime: new Date(formData.get("arrivalTime") as string),
-      price: formData.get("price") as string // schema decimal
+      startLocation: "", // Will be derived from route on server
+      endLocation: "",
+      departureTime: formData.get("departureTime") as string,
+      price: Number(formData.get("price"))
     }, {
       onSuccess: () => {
         setOpen(false);
@@ -273,7 +272,7 @@ function SchedulesPanel() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {schedules?.map(schedule => (
+        {schedules?.map((schedule: any) => (
           <Card key={schedule.id}>
             <CardContent className="pt-6">
               <div className="flex justify-between mb-2">

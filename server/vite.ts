@@ -4,50 +4,48 @@ import { type Server } from "http";
 import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
-import { nanoid } from "nanoid";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const viteLogger = createLogger();
 
 export async function setupVite(server: Server, app: Express) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server, path: "/vite-hmr" },
-    allowedHosts: true as const,
-  };
-
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
+    server: {
+      middlewareMode: true,
+      hmr: {
+        server: server,
+        clientPort: 5000,
       },
     },
-    server: serverOptions,
     appType: "custom",
   });
 
   app.use(vite.middlewares);
 
-  app.use("/{*path}", async (req, res, next) => {
+  app.use(async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
+      // Skip if it looks like an asset request (has an extension)
+      // This allows Express to skip these and they'll eventually 404
+      // instead of being caught by this and served as text/html
+      const ext = path.extname(url);
+      if (ext && ext !== ".html") {
+        return next();
+      }
+
       const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "..",
+        process.cwd(),
         "client",
         "index.html",
       );
 
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`,
-      );
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {

@@ -1,19 +1,8 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
-import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import MapGL, { Marker, Source, Layer, Popup } from 'react-map-gl/mapbox';
+import { useBusStops } from '@/hooks/use-bus-stops';
 
-// Fix for default marker icons in Leaflet with React
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 interface RouteMapProps {
   startLocation: string;
@@ -22,62 +11,127 @@ interface RouteMapProps {
   className?: string;
 }
 
-// Ghanaian Locations Coords
-const MOCK_COORDS: Record<string, [number, number]> = {
-  "Accra": [5.6037, -0.1870],
-  "Kumasi": [6.6666, -1.6163],
-  "Takoradi": [4.8917, -1.7525],
-  "Tamale": [9.4007, -0.8393],
-  "Circle Station": [5.5593, -0.2085],
-  "Madina Station": [5.6685, -0.1654],
-  "Kejetia Station": [6.6941, -1.6217],
-  "Linda Dor": [6.2647, -0.5284],
-};
-
-function getCoords(city: string): [number, number] {
-  // Return known city coords or a default slightly offset random location
-  return MOCK_COORDS[city] || [5.6037 + (Math.random() - 0.5) * 0.1, -0.1870 + (Math.random() - 0.5) * 0.1];
-}
-
 export function RouteMap({ startLocation, endLocation, stops, className = "h-64 w-full" }: RouteMapProps) {
+  const [coordinates, setCoordinates] = useState<Record<string, [number, number]>>({});
+  const [popupInfo, setPopupInfo] = useState<{ name: string; lng: number; lat: number } | null>(null);
+  const { data: allBusStops = [] } = useBusStops();
+
+  useEffect(() => {
+    const coordsMap: Record<string, [number, number]> = {};
+    allBusStops.forEach(stop => {
+      // Store as [lng, lat] for Mapbox
+      if (stop.location) {
+        coordsMap[stop.name.toLowerCase().trim()] = [stop.location.lng, stop.location.lat];
+      }
+    });
+    setCoordinates(coordsMap);
+  }, [allBusStops]);
+
+  const getCoords = (location: string): [number, number] => {
+    return coordinates[location.toLowerCase().trim()] || [-0.1870, 5.6037]; // Default Accra [lng, lat]
+  };
+
   const startCoords = getCoords(startLocation);
   const endCoords = getCoords(endLocation);
-  const stopCoords = stops.map(stop => getCoords(stop));
-  
-  const allPoints = [startCoords, ...stopCoords, endCoords];
+  const stopCoords = (Array.isArray(stops) ? stops : []).map(stop => getCoords(stop));
+
+  // Create GeoJSON for the route line
+  const routeGeoJson = useMemo(() => ({
+    type: 'Feature' as const,
+    properties: {},
+    geometry: {
+      type: 'LineString' as const,
+      coordinates: [startCoords, ...stopCoords, endCoords]
+    }
+  }), [startCoords, stopCoords, endCoords]);
+
+  const lineStyle = {
+    id: 'route-line',
+    type: 'line' as const,
+    paint: {
+      'line-color': '#2563eb',
+      'line-width': 4,
+      'line-opacity': 0.7
+    }
+  };
+
+  // Calculate center point
+  const centerLng = (startCoords[0] + endCoords[0]) / 2;
+  const centerLat = (startCoords[1] + endCoords[1]) / 2;
 
   return (
-    <div className={`rounded-xl overflow-hidden shadow-inner ${className}`}>
-      <MapContainer 
-        center={startCoords} 
-        zoom={6} 
-        scrollWheelZoom={false}
-        className="h-full w-full"
+    <div className={`rounded-xl overflow-hidden shadow-inner border border-gray-100 ${className}`}>
+      <MapGL
+        initialViewState={{
+          longitude: centerLng,
+          latitude: centerLat,
+          zoom: 7
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapboxAccessToken={MAPBOX_TOKEN}
+        scrollZoom={false}
+        dragPan={false}
+        doubleClickZoom={false}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        <Marker position={startCoords}>
-          <Popup>Start: {startLocation}</Popup>
-        </Marker>
-        
-        {stopCoords.map((coord, idx) => (
-          <Marker key={idx} position={coord}>
-             <Popup>Stop: {stops[idx]}</Popup>
-          </Marker>
-        ))}
-        
-        <Marker position={endCoords}>
-          <Popup>End: {endLocation}</Popup>
+        {/* Route line */}
+        {startLocation && endLocation && (
+          <Source id="route" type="geojson" data={routeGeoJson}>
+            <Layer {...lineStyle} />
+          </Source>
+        )}
+
+        {/* Start marker */}
+        <Marker
+          longitude={startCoords[0]}
+          latitude={startCoords[1]}
+          anchor="bottom"
+          onClick={() => setPopupInfo({ name: `Start: ${startLocation}`, lng: startCoords[0], lat: startCoords[1] })}
+        >
+          <div className="w-6 h-6 bg-emerald-500 border-2 border-white rounded-full shadow-lg flex items-center justify-center cursor-pointer">
+            <div className="w-2 h-2 bg-white rounded-full" />
+          </div>
         </Marker>
 
-        <Polyline 
-          positions={allPoints} 
-          pathOptions={{ color: 'blue', weight: 4, opacity: 0.7 }} 
-        />
-      </MapContainer>
+        {/* Stop markers */}
+        {stopCoords.map((coord, idx) => (
+          <Marker
+            key={idx}
+            longitude={coord[0]}
+            latitude={coord[1]}
+            anchor="center"
+            onClick={() => setPopupInfo({ name: `Stop: ${stops[idx]}`, lng: coord[0], lat: coord[1] })}
+          >
+            <div className="w-3 h-3 bg-blue-500 border-2 border-white rounded-full shadow cursor-pointer" />
+          </Marker>
+        ))}
+
+        {/* End marker */}
+        <Marker
+          longitude={endCoords[0]}
+          latitude={endCoords[1]}
+          anchor="bottom"
+          onClick={() => setPopupInfo({ name: `End: ${endLocation}`, lng: endCoords[0], lat: endCoords[1] })}
+        >
+          <div className="w-6 h-6 bg-red-500 border-2 border-white rounded-full shadow-lg flex items-center justify-center cursor-pointer">
+            <div className="w-2 h-2 bg-white rounded-full" />
+          </div>
+        </Marker>
+
+        {/* Popup */}
+        {popupInfo && (
+          <Popup
+            longitude={popupInfo.lng}
+            latitude={popupInfo.lat}
+            anchor="bottom"
+            onClose={() => setPopupInfo(null)}
+            closeButton={true}
+            closeOnClick={false}
+          >
+            <div className="font-medium text-sm">{popupInfo.name}</div>
+          </Popup>
+        )}
+      </MapGL>
     </div>
   );
 }

@@ -26,14 +26,18 @@ export default function Landing() {
                 </p>
                 <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
                   <div className="rounded-md shadow">
-                    <Button onClick={() => window.location.href = "/api/login"} className="w-full btn-primary px-8 py-4 h-auto text-lg">
-                      Get Started
-                    </Button>
+                    <Link href="/signup">
+                      <Button className="w-full btn-primary px-8 py-4 h-auto text-lg">
+                        Get Started
+                      </Button>
+                    </Link>
                   </div>
                   <div className="mt-3 sm:mt-0 sm:ml-3">
-                    <Button variant="outline" className="w-full px-8 py-4 h-auto text-lg border-primary text-primary hover:bg-blue-50">
-                      View Routes
-                    </Button>
+                    <Link href="/dashboard">
+                      <Button variant="outline" className="w-full px-8 py-4 h-auto text-lg border-primary text-primary hover:bg-blue-50">
+                        View Routes
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </motion.div>

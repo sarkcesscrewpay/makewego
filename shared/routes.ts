@@ -116,7 +116,7 @@ export const api = {
       },
     },
   },
-  
+
   // === USER PROFILE ===
   profile: {
     get: {
@@ -127,6 +127,14 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/profile',
+      responses: {
+        200: z.any(),
+        404: errorSchemas.notFound,
+      },
+    }
   }
 };
 

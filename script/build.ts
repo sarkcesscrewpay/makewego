@@ -1,35 +1,19 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
 import { rm, readFile } from "fs/promises";
+import { builtinModules } from "module";
+
+// Node.js built-in modules (both with and without node: prefix)
+const nodeBuiltins = [
+  ...builtinModules,
+  ...builtinModules.map(m => `node:${m}`),
+];
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
-const allowlist = [
-  "@google/generative-ai",
-  "axios",
-  "connect-pg-simple",
-  "cors",
-  "date-fns",
-  "drizzle-orm",
-  "drizzle-zod",
-  "express",
-  "express-rate-limit",
-  "express-session",
-  "jsonwebtoken",
-  "memorystore",
-  "multer",
-  "nanoid",
-  "nodemailer",
-  "openai",
-  "passport",
-  "passport-local",
-  "pg",
-  "stripe",
-  "uuid",
-  "ws",
-  "xlsx",
-  "zod",
-  "zod-validation-error",
+const allowlist: string[] = [
+  // Keeping this empty to force all dependencies to be external (node_modules).
+  // This avoids bundling CJS/ESM mixed dependencies which causes "Dynamic require" errors.
 ];
 
 async function buildAll() {
@@ -44,20 +28,26 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
+  const externals = [
+    ...allDeps.filter((dep) => !allowlist.includes(dep)),
+    ...nodeBuiltins,
+  ];
 
   await esbuild({
     entryPoints: ["server/index.ts"],
     platform: "node",
     bundle: true,
-    format: "cjs",
-    outfile: "dist/index.cjs",
+    format: "esm",
+    outfile: "dist/index.js",
     define: {
-      "process.env.NODE_ENV": '"production"',
+      // "process.env.NODE_ENV": '"production"', // Removed to allow runtime env usage and avoid "assign to constant" warning
     },
     minify: true,
     external: externals,
     logLevel: "info",
+    banner: {
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+    },
   });
 }
 
