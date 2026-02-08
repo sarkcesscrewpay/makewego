@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import MapGL, { Marker, Source, Layer, Popup, MapRef } from 'react-map-gl/mapbox';
+import MapGL, { Marker, Source, Layer, Popup, MapRef, NavigationControl } from 'react-map-gl/mapbox';
 import { type SearchedRoute } from "@/hooks/use-route-search";
 import { Route as RouteIcon } from "lucide-react";
 
@@ -256,6 +256,7 @@ export default function RouteMapView({ route }: RouteMapViewProps) {
                 mapStyle="mapbox://styles/mapbox/streets-v12"
                 mapboxAccessToken={MAPBOX_TOKEN}
             >
+                <NavigationControl position="top-right" showCompass={false} />
                 {/* Route polyline with glow effect */}
                 {roadPath.length > 1 && (
                     <>

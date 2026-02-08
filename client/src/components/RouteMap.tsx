@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import MapGL, { Marker, Source, Layer, Popup } from 'react-map-gl/mapbox';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import MapGL, { Marker, Source, Layer, Popup, MapRef, NavigationControl } from 'react-map-gl/mapbox';
 import { useBusStops } from '@/hooks/use-bus-stops';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -12,9 +12,29 @@ interface RouteMapProps {
 }
 
 export function RouteMap({ startLocation, endLocation, stops, className = "h-64 w-full" }: RouteMapProps) {
+  const mapRef = useRef<MapRef>(null);
   const [coordinates, setCoordinates] = useState<Record<string, [number, number]>>({});
   const [popupInfo, setPopupInfo] = useState<{ name: string; lng: number; lat: number } | null>(null);
   const { data: allBusStops = [] } = useBusStops();
+
+  // Fit bounds to show all route points
+  useEffect(() => {
+    if (!mapRef.current || !startLocation || !endLocation) return;
+    const allCoords = [getCoords(startLocation), ...stopCoords, getCoords(endLocation)];
+    if (allCoords.length < 2) return;
+    const lngs = allCoords.map(c => c[0]);
+    const lats = allCoords.map(c => c[1]);
+    // Only fit if we have real coordinates (not all default)
+    const hasReal = allCoords.some(c => c[0] !== -0.1870 || c[1] !== 5.6037);
+    if (hasReal) {
+      setTimeout(() => {
+        mapRef.current?.fitBounds(
+          [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+          { padding: 40, maxZoom: 13, duration: 800 }
+        );
+      }, 300);
+    }
+  }, [coordinates, startLocation, endLocation]);
 
   useEffect(() => {
     const coordsMap: Record<string, [number, number]> = {};
@@ -62,6 +82,7 @@ export function RouteMap({ startLocation, endLocation, stops, className = "h-64 
   return (
     <div className={`rounded-xl overflow-hidden shadow-inner border border-gray-100 ${className}`}>
       <MapGL
+        ref={mapRef}
         initialViewState={{
           longitude: centerLng,
           latitude: centerLat,
@@ -70,10 +91,8 @@ export function RouteMap({ startLocation, endLocation, stops, className = "h-64 
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
         mapboxAccessToken={MAPBOX_TOKEN}
-        scrollZoom={false}
-        dragPan={false}
-        doubleClickZoom={false}
       >
+        <NavigationControl position="top-right" showCompass={false} />
         {/* Route line */}
         {startLocation && endLocation && (
           <Source id="route" type="geojson" data={routeGeoJson}>

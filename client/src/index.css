@@ -207,3 +207,48 @@
 .phone-input-container:focus-within .PhoneInputCountrySelectArrow {
   border-color: hsl(var(--primary));
 }
+
+/* ===== Animated Bus Marker ===== */
+
+/* Gentle bobbing animation for the bus icon */
+.bus-bounce {
+  animation: busBounce 2s ease-in-out infinite;
+}
+
+@keyframes busBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Expanding pulse ring around bus */
+.bus-pulse-ring {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%);
+  animation: busPulseRing 2s ease-out infinite;
+}
+
+@keyframes busPulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Fade-in for passenger markers */
+.animate-fade-in {
+  animation: fadeInUp 0.4s ease-out both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

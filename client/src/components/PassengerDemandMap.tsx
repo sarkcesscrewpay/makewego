@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import MapGL, { Marker, Source, Layer, Popup } from 'react-map-gl/mapbox';
+import MapGL, { Marker, Source, Layer, Popup, MapRef } from 'react-map-gl/mapbox';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -16,9 +16,18 @@ interface PassengerDemandMapProps {
 }
 
 export default function PassengerDemandMap({ scheduleId, className }: PassengerDemandMapProps) {
+    const mapRef = useRef<MapRef>(null);
     const [passengers, setPassengers] = useState<Record<string, Passenger>>({});
     const [popupInfo, setPopupInfo] = useState<{ name: string; lng: number; lat: number } | null>(null);
     const ws = useRef<WebSocket | null>(null);
+
+    // Resize map after animated container reveals it
+    useEffect(() => {
+        const timers = [300, 600, 1000].map(ms =>
+            setTimeout(() => mapRef.current?.resize(), ms)
+        );
+        return () => timers.forEach(clearTimeout);
+    }, []);
 
     useEffect(() => {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -87,6 +96,7 @@ export default function PassengerDemandMap({ scheduleId, className }: PassengerD
     return (
         <div className={`rounded-[2.5rem] overflow-hidden border-4 border-white shadow-2xl relative ${className}`}>
             <MapGL
+                ref={mapRef}
                 initialViewState={{
                     longitude: -0.1870,
                     latitude: 5.6037,

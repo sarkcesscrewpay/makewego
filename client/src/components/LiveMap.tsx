@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import MapGL, { Marker, Source, Layer, MapRef } from 'react-map-gl/mapbox';
+import MapGL, { Marker, Source, Layer, MapRef, NavigationControl } from 'react-map-gl/mapbox';
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 
@@ -57,6 +57,14 @@ export default function LiveMap({ scheduleId }: LiveMapProps) {
         destinationRef.current = null;
         lastRerouteTime.current = 0;
     }, [scheduleId]);
+
+    // Resize map after animated container reveals it
+    useEffect(() => {
+        const timers = [300, 600, 1000].map(ms =>
+            setTimeout(() => mapRef.current?.resize(), ms)
+        );
+        return () => timers.forEach(clearTimeout);
+    }, []);
 
     // Recenter map on bus location
     const recenterMap = useCallback((coords: [number, number]) => {
@@ -400,6 +408,7 @@ export default function LiveMap({ scheduleId }: LiveMapProps) {
                 mapStyle={mapStyle}
                 mapboxAccessToken={MAPBOX_TOKEN}
             >
+                <NavigationControl position="top-right" />
                 {/* Planned route (dashed gray) */}
                 {roadPath.length > 1 && (
                     <Source id={`planned-route-${scheduleId}`} type="geojson" data={plannedRouteGeoJson}>
@@ -439,32 +448,35 @@ export default function LiveMap({ scheduleId }: LiveMapProps) {
                     </Marker>
                 )}
 
-                {/* Bus marker with rotation */}
+                {/* Animated bus marker with rotation */}
                 <Marker
                     longitude={busLocation[0]}
                     latitude={busLocation[1]}
                     anchor="center"
                     rotation={rotation}
                 >
-                    <div className="relative group cursor-pointer transition-transform duration-500 will-change-transform">
-                        {/* Pulse effect for visibility */}
-                        <div className="absolute -inset-4 bg-blue-500/20 rounded-full animate-pulse blur-sm" />
+                    <div className="relative cursor-pointer">
+                        {/* Outer pulsing ring */}
+                        <div className="absolute -inset-5 rounded-full bus-pulse-ring" />
+                        {/* Inner glow */}
+                        <div className="absolute -inset-3 bg-blue-500/20 rounded-full animate-pulse" />
 
-                        {/* Bus Body */}
-                        <div className="relative z-10 p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-2xl shadow-blue-900/40 border-[2px] border-white transform hover:scale-105 transition-transform duration-200">
-                            {/* Styling for the bus icon */}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white drop-shadow-md">
-                                <path d="M4 10h16" />
-                                <path d="M4 14h16" />
-                                <path d="M2 6h20" />
-                                <path d="M18 18h3s1-1.33 1-3c0-3.13-2.68-5-6-5H8c-3.32 0-6 1.87-6 5 0 1.67 1 3 1 3h3" />
+                        {/* Bus body */}
+                        <div className="relative z-10 w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-2xl shadow-blue-600/50 border-[3px] border-white flex items-center justify-center bus-bounce">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-white drop-shadow-md">
+                                <path d="M8 6v6" />
+                                <path d="M16 6v6" />
+                                <path d="M2 12h20" />
+                                <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-2.8-2-5-6-5H8c-4 0-6 2.2-6 5 0 .4.1.8.2 1.2.3 1.1.8 2.8.8 2.8h3" />
                                 <circle cx="7" cy="18" r="2" />
                                 <circle cx="17" cy="18" r="2" />
                             </svg>
                         </div>
 
-                        {/* Direction Arrow */}
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] border-b-indigo-700 filter drop-shadow-sm" />
+                        {/* Direction arrow */}
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                            <div className="w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-b-[10px] border-b-indigo-600 drop-shadow-sm" />
+                        </div>
                     </div>
                 </Marker>
             </MapGL>

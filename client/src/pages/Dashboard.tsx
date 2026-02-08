@@ -14,13 +14,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import RouteDialog from "./RouteDialog";
 import { Link } from "wouter";
-import PassengerDemandMap from "@/components/PassengerDemandMap";
 import TrackingToggle from "@/components/TrackingToggle";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 import { User as UserIcon } from "lucide-react";
 
-// Lazy load map component
+// Lazy load map components
 const LiveMap = lazy(() => import("@/components/LiveMap"));
+const DriverMapView = lazy(() => import("@/components/DriverMapView"));
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
@@ -243,7 +243,7 @@ function DriverDashboard({ user }: { user: any }) {
                       onClick={() => setActiveTrackingId(activeTrackingId === (s._id || s.id) ? null : (s._id || s.id))}
                     >
                       <MapIcon className="h-4 w-4" />
-                      {activeTrackingId === (s._id || s.id) ? "Hide Live Demand" : "View Live Demand"}
+                      {activeTrackingId === (s._id || s.id) ? "Hide Map" : "View Live Map"}
                     </Button>
 
                     <div className="flex gap-2">
@@ -264,12 +264,23 @@ function DriverDashboard({ user }: { user: any }) {
                     {activeTrackingId === (s._id || s.id) && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
+                        animate={{ opacity: 1, height: 400 }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800"
+                        transition={{
+                          height: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
+                          opacity: { duration: 0.3, delay: 0.1 }
+                        }}
+                        className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 overflow-hidden"
                       >
-                        <div className="h-[280px] md:h-[350px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-xl">
-                          <PassengerDemandMap scheduleId={s._id || s.id} className="h-full w-full" />
+                        <div className="h-[350px] md:h-[400px] w-full">
+                          <Suspense fallback={<div className="h-full w-full bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>}>
+                            <DriverMapView
+                              scheduleId={s._id || s.id}
+                              startLocation={s.startLocation || s.route?.startLocation}
+                              endLocation={s.endLocation || s.route?.endLocation}
+                              isTracking={isLive}
+                            />
+                          </Suspense>
                         </div>
                       </motion.div>
                     )}
@@ -694,8 +705,12 @@ function PassengerDashboard() {
           {selectedSchedule && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
+              animate={{ height: 420, opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
+              transition={{
+                height: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
+                opacity: { duration: 0.3, delay: 0.15 }
+              }}
               id="live-map-section"
               className="scroll-mt-20 overflow-hidden"
             >
